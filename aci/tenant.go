@@ -24,7 +24,9 @@ func jsonTenantDel(name string) string {
 }
 
 // TenantAdd creates a new tenant.
-func (c *Client) TenantAdd(name, descr string) error {
+func (c *Client) TenantAdd(name, descr string) ([]map[string]interface{}, error) {
+
+	key := "fvTenant"
 
 	api := "/api/mo/uni.json"
 
@@ -32,20 +34,24 @@ func (c *Client) TenantAdd(name, descr string) error {
 
 	url := c.getURL(api)
 
+	url += "?rsp-subtree=modified" // demand response
+
 	c.debugf("tenant add: url=%s json=%s", url, jsonTenant)
 
 	body, errPost := c.post(url, contentTypeJSON, bytes.NewBufferString(jsonTenant))
 	if errPost != nil {
-		return errPost
+		return nil, errPost
 	}
 
 	c.debugf("tenant add: reply: %s", string(body))
 
-	return parseJSONError(body)
+	return jsonImdataAttributes(c, body, key, "TenantAdd")
 }
 
 // TenantDel deletes an existing tenant.
-func (c *Client) TenantDel(name string) error {
+func (c *Client) TenantDel(name string) ([]map[string]interface{}, error) {
+
+	key := "fvTenant"
 
 	api := "/api/mo/uni.json"
 
@@ -59,12 +65,13 @@ func (c *Client) TenantDel(name string) error {
 
 	body, errPost := c.post(url, contentTypeJSON, bytes.NewBufferString(jsonTenant))
 	if errPost != nil {
-		return errPost
+		return nil, errPost
 	}
 
 	c.debugf("tenant del: reply: %s", string(body))
 
-	return parseJSONError(body)
+	//return parseJSONError(body)
+	return jsonImdataAttributes(c, body, key, "TenantDel")
 }
 
 // TenantList retrieves the list of tenants.
@@ -75,6 +82,8 @@ func (c *Client) TenantList() ([]map[string]interface{}, error) {
 	api := "/api/node/class/" + key + ".json"
 
 	url := c.getURL(api)
+
+	url += "?rsp-subtree-include=health"
 
 	c.debugf("TenantList: url=%s", url)
 

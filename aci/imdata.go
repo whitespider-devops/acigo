@@ -78,19 +78,19 @@ func extractKeyAttributes(c hasDebugf, list []interface{}, key, label string) []
 	result := make([]map[string]interface{}, 0, len(list))
 
 	for _, i := range list {
-		item, errItem := mapGet(i, key)
-		if errItem != nil {
-			c.debugf("%s: not a %s: %v", label, key, i)
-			continue
-		}
-		attr, errAttr := mapGet(item, "attributes")
-		if errAttr != nil {
-			c.debugf("%s: missing attributes: %v", label, item)
-			continue
-		}
-		m, isMap := attr.(map[string]interface{})
+		//item, errItem := mapGet(i, key)
+		//if errItem != nil {
+		//	c.debugf("%s: not a %s: %v", label, key, i)
+		//	continue
+		//}
+		//attr, errAttr := mapGet(item, "attributes")
+		//if errAttr != nil {
+		//	c.debugf("%s: missing attributes: %v", label, item)
+		//	continue
+		//}
+		m, isMap := i.(map[string]interface{})
 		if !isMap {
-			c.debugf("%s: not a map: %v", label, attr)
+			c.debugf("%s: not a map: %v", label, i)
 			continue
 		}
 		result = append(result, m)
