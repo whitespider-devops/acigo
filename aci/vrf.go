@@ -18,9 +18,11 @@ func dnVrf(tenant, vrf string) string {
 }
 
 // VrfAdd creates a new VRF in a tenant.
-func (c *Client) VrfAdd(tenant, vrf, descr string) error {
+func (c *Client) VrfAdd(tenant, vrf, descr string) ([]map[string]interface{}, error) {
 
 	me := "VrfAdd"
+
+	key := "fvCtx"
 
 	rn := rnVrf(vrf)
 
@@ -32,22 +34,26 @@ func (c *Client) VrfAdd(tenant, vrf, descr string) error {
 
 	url := c.getURL(api)
 
+	url += "?rsp-subtree=modified" // demand response
+
 	c.debugf("%s: url=%s json=%s", me, url, j)
 
 	body, errPost := c.post(url, contentTypeJSON, bytes.NewBufferString(j))
 	if errPost != nil {
-		return fmt.Errorf("%s: %v", me, errPost)
+		return nil, fmt.Errorf("%s: %v", me, errPost)
 	}
 
 	c.debugf("%s: reply: %s", me, string(body))
 
-	return parseJSONError(body)
+	return jsonImdataAttributes(c, body, key, me)
 }
 
 // VrfDel deletes an existing VRF from a tenant.
-func (c *Client) VrfDel(tenant, vrf string) error {
+func (c *Client) VrfDel(tenant, vrf string) ([]map[string]interface{}, error) {
 
 	me := "VrfDel"
+
+	key := "fvCtx"
 
 	rnT := rnTenant(tenant)
 
@@ -64,12 +70,12 @@ func (c *Client) VrfDel(tenant, vrf string) error {
 
 	body, errPost := c.post(url, contentTypeJSON, bytes.NewBufferString(j))
 	if errPost != nil {
-		return fmt.Errorf("%s: %v", me, errPost)
+		return nil, fmt.Errorf("%s: %v", me, errPost)
 	}
 
 	c.debugf("%s: reply: %s", me, string(body))
 
-	return parseJSONError(body)
+	return jsonImdataAttributes(c, body, key, me)
 }
 
 // VrfList retrieves the list of VRFs from a tenant.
@@ -84,6 +90,8 @@ func (c *Client) VrfList(tenant string) ([]map[string]interface{}, error) {
 	api := "/api/node/mo/uni/" + t + ".json?query-target=children&target-subtree-class=" + key
 
 	url := c.getURL(api)
+
+	url += "&rsp-subtree-include=health"
 
 	c.debugf("%s: url=%s", me, url)
 

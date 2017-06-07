@@ -22,9 +22,11 @@ func dnSubnet(tenant, bd, subnet string) string {
 }
 
 // BridgeDomainAdd creates a new bridge domain in a tenant.
-func (c *Client) BridgeDomainAdd(tenant, bd, descr string) error {
+func (c *Client) BridgeDomainAdd(tenant, bd, descr string)  ([]map[string]interface{}, error) {
 
 	me := "BridgeDomainAdd"
+
+	key := "fvBD"
 
 	rn := rnBridgeDomain(bd)
 
@@ -34,6 +36,8 @@ func (c *Client) BridgeDomainAdd(tenant, bd, descr string) error {
 
 	url := c.getURL(api)
 
+	url += "?rsp-subtree=modified" // demand response
+
 	j := fmt.Sprintf(`{"fvBD":{"attributes":{"dn":"uni/%s","name":"%s","descr":"%s","rn":"%s","status":"created"}}}`,
 		dn, bd, descr, rn)
 
@@ -41,18 +45,20 @@ func (c *Client) BridgeDomainAdd(tenant, bd, descr string) error {
 
 	body, errPost := c.post(url, contentTypeJSON, bytes.NewBufferString(j))
 	if errPost != nil {
-		return fmt.Errorf("%s: %v", me, errPost)
+		return nil, fmt.Errorf("%s: %v", me, errPost)
 	}
 
 	c.debugf("%s: reply: %s", me, string(body))
 
-	return parseJSONError(body)
+	return jsonImdataAttributes(c, body, key, me)
 }
 
 // BridgeDomainDel deletes an existing bridge domain from a tenant.
-func (c *Client) BridgeDomainDel(tenant, bd string) error {
+func (c *Client) BridgeDomainDel(tenant, bd string) ([]map[string]interface{}, error) {
 
 	me := "BridgeDomainDel"
+
+	key := "fvBD"
 
 	rnT := rnTenant(tenant)
 
@@ -69,12 +75,12 @@ func (c *Client) BridgeDomainDel(tenant, bd string) error {
 
 	body, errPost := c.post(url, contentTypeJSON, bytes.NewBufferString(j))
 	if errPost != nil {
-		return fmt.Errorf("%s: %v", me, errPost)
+		return nil, fmt.Errorf("%s: %v", me, errPost)
 	}
 
 	c.debugf("%s: reply: %s", me, string(body))
 
-	return parseJSONError(body)
+	return jsonImdataAttributes(c, body, key, me)
 }
 
 // BridgeDomainList retrieves the list of bridge domains from a tenant.
@@ -89,6 +95,8 @@ func (c *Client) BridgeDomainList(tenant string) ([]map[string]interface{}, erro
 	api := "/api/node/mo/uni/" + t + ".json?query-target=children&target-subtree-class=" + key
 
 	url := c.getURL(api)
+
+	url += "&rsp-subtree-include=health"
 
 	c.debugf("%s: url=%s", me, url)
 
