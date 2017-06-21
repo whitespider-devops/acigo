@@ -42,30 +42,36 @@ func apiAP(tenant, name string) string {
 }
 
 // ApplicationProfileAdd creates a new application profile in a tenant.
-func (c *Client) ApplicationProfileAdd(tenant, name, descr string) error {
+func (c *Client) ApplicationProfileAdd(tenant, name, descr string) ([]map[string]interface{}, error) {
 
 	api := apiAP(tenant, name)
+
+	key := "fvAp"
 
 	j := jsonAPAdd(tenant, name, descr)
 
 	url := c.getURL(api)
 
+	url += "?rsp-subtree=modified" // demand response
+
 	c.debugf("ApplicationProfileAdd: url=%s json=%s", url, j)
 
 	body, errPost := c.post(url, contentTypeJSON, bytes.NewBufferString(j))
 	if errPost != nil {
-		return errPost
+		return nil, errPost
 	}
 
 	c.debugf("ApplicationProfileAdd: reply: %s", string(body))
 
-	return parseJSONError(body)
+	return jsonImdataAttributes(c, body, key, "ApplicationProfileAdd")
 }
 
 // ApplicationProfileDel deletes an existing application profile from a tenant.
-func (c *Client) ApplicationProfileDel(tenant, name string) error {
+func (c *Client) ApplicationProfileDel(tenant, name string) ([]map[string]interface{}, error) {
 
 	api := apiAP(tenant, name)
+
+	key := "fvAp"
 
 	j := jsonAPDel(tenant, name)
 
@@ -75,12 +81,12 @@ func (c *Client) ApplicationProfileDel(tenant, name string) error {
 
 	body, errPost := c.post(url, contentTypeJSON, bytes.NewBufferString(j))
 	if errPost != nil {
-		return errPost
+		return nil, errPost
 	}
 
 	c.debugf("ApplicationProfileDel: reply: %s", string(body))
 
-	return parseJSONError(body)
+	return jsonImdataAttributes(c, body, key, "ApplicationProfileDel")
 }
 
 // ApplicationProfileList retrieves application profiles from a tenant.

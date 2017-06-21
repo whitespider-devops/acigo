@@ -14,9 +14,11 @@ func dnAEPG(tenant, ap, epg string) string {
 }
 
 // ApplicationEPGAdd creates a new application EPG in an application profile and attached to a bridge domain.
-func (c *Client) ApplicationEPGAdd(tenant, applicationProfile, bridgeDomain, epg, descr string) error {
+func (c *Client) ApplicationEPGAdd(tenant, applicationProfile, bridgeDomain, epg, descr string) ([]map[string]interface{}, error) {
 
 	me := "ApplicationEPGAdd"
+
+	key := "fvAEPg"
 
 	rnE := rnAEPG(epg)
 
@@ -26,24 +28,28 @@ func (c *Client) ApplicationEPGAdd(tenant, applicationProfile, bridgeDomain, epg
 
 	url := c.getURL(api)
 
+	url += "?rsp-subtree=modified" // demand response
+
 	j := fmt.Sprintf(`{"fvAEPg":{"attributes":{"dn":"uni/%s","name":"%s","descr":"%s","rn":"%s","status":"created"},"children":[{"fvRsBd":{"attributes":{"tnFvBDName":"%s","status":"created,modified"}}}]}}`, dnE, epg, descr, rnE, bridgeDomain)
 
 	c.debugf("%s: url=%s json=%s", me, url, j)
 
 	body, errPost := c.post(url, contentTypeJSON, bytes.NewBufferString(j))
 	if errPost != nil {
-		return fmt.Errorf("%s: %v", me, errPost)
+		return nil, fmt.Errorf("%s: %v", me, errPost)
 	}
 
 	c.debugf("%s: reply: %s", me, string(body))
 
-	return parseJSONError(body)
+	return jsonImdataAttributes(c, body, key, "ApplicationEPGAdd")
 }
 
 // ApplicationEPGDel deletes an existing application EPG from an application profile.
-func (c *Client) ApplicationEPGDel(tenant, applicationProfile, epg string) error {
+func (c *Client) ApplicationEPGDel(tenant, applicationProfile, epg string) ([]map[string]interface{}, error) {
 
 	me := "ApplicationEPGDel"
+
+	key := "fvAEPg"
 
 	dnP := dnAP(tenant, applicationProfile)
 	dnE := dnAEPG(tenant, applicationProfile, epg)
@@ -59,12 +65,12 @@ func (c *Client) ApplicationEPGDel(tenant, applicationProfile, epg string) error
 
 	body, errPost := c.post(url, contentTypeJSON, bytes.NewBufferString(j))
 	if errPost != nil {
-		return fmt.Errorf("%s: %v", me, errPost)
+		return nil, fmt.Errorf("%s: %v", me, errPost)
 	}
 
 	c.debugf("%s: reply: %s", me, string(body))
 
-	return parseJSONError(body)
+	return jsonImdataAttributes(c, body, key, "ApplicationEPGDel")
 }
 
 // ApplicationEPGList retrieves the list of application EPGs in an application profile.
